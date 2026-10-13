@@ -29,13 +29,15 @@ jobs:
           brew install xcodegen
           xcodegen generate
 
-      - name: Build (chưa ký)
+      # Ký tạm (ad-hoc) để file cài mang theo bản khai quyền (App Group app ↔ widget);
+      # Sideloadly sẽ ký lại bằng Apple ID của người dùng.
+      - name: Build (ký tạm, kèm bản khai quyền)
         working-directory: ios/App
         run: |
-          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
-            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | tail -n 80
-          test "${PIPESTATUS[0]}" -eq 0
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build             CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=- DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER=             CODE_SIGNING_REQUIRED=NO AD_HOC_CODE_SIGNING_ALLOWED=YES build | tail -n 80
+          for b in build/Build/Products/Release-iphoneos/App.app build/Build/Products/Release-iphoneos/App.app/PlugIns/TKBWidget.appex; do
+            echo "== $b"; codesign -d --entitlements - "$b" 2>&1 | tail -n 12
+          done
           ls build/Build/Products/Release-iphoneos/App.app/PlugIns
           mkdir -p Payload
           cp -R build/Build/Products/Release-iphoneos/App.app Payload/
