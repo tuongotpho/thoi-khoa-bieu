@@ -12,7 +12,12 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "save", returnType: CAPPluginReturnPromise)
     ]
 
-    static let appGroup = "group.com.august87.thoikhoabieu"
+    /// Tên ngăn dữ liệu chung. AltStore (cài bằng Apple ID miễn phí) đổi tên này và ghi tên mới
+    /// vào mục ALTAppGroups của Info.plist — có thì dùng tên đó, không thì dùng tên gốc.
+    static var appGroup: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String])?.first
+            ?? "group.com.august87.thoikhoabieu"
+    }
 
     @objc func save(_ call: CAPPluginCall) {
         guard let json = call.getString("json") else {

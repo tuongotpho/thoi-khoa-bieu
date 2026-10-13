@@ -24,7 +24,11 @@ struct WFeed: Codable {
 }
 
 enum FeedStore {
-    static let appGroup = "group.com.august87.thoikhoabieu"
+    /// Giống phía app: ưu tiên tên ngăn do AltStore ghi vào Info.plist (ALTAppGroups).
+    static var appGroup: String {
+        (Bundle.main.object(forInfoDictionaryKey: "ALTAppGroups") as? [String])?.first
+            ?? "group.com.august87.thoikhoabieu"
+    }
 
     static func load() -> WFeed? {
         guard let s = UserDefaults(suiteName: appGroup)?.string(forKey: "feed"),
