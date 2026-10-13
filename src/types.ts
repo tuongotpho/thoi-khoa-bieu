@@ -48,6 +48,8 @@ export interface Settings {
   /** Nhắc trước bao nhiêu phút khi xuất sang Lịch iPhone */
   reminderMinutes: number
   categories: string[]
+  /** Lần cuối chép mã widget Scriptable (ISO) — để nhắc chép lại khi TKB đổi */
+  widgetCopiedAt?: string
 }
 
 export interface AppData {

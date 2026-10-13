@@ -1,5 +1,6 @@
 import type { AppData, Lesson } from './types'
-import { addDays, lessonsOn, toISODate } from './time'
+import scriptTemplate from './scriptable-widget.js?raw'
+import { addDays, buildPalette, lessonsOn, mainSubject, splitText as split, toISODate, toLesson, toMinutes } from './time'
 
 /**
  * Dữ liệu gửi sang widget màn hình chính (Swift đọc lại, xem ios/App/TKBWidget).
@@ -22,21 +23,6 @@ export interface WidgetFeed {
   days: { date: string; lessons: WidgetLesson[] }[]
 }
 
-function split(text: string): [string, string] {
-  const i = text.indexOf(' - ')
-  return i > 0 ? [text.slice(0, i).trim(), text.slice(i + 3).trim()] : [text.trim(), '']
-}
-
-/** Môn xuất hiện nhiều nhất — môn chính, khỏi ghi lặp lại trên mỗi dòng. */
-export function mainSubject(texts: string[]): string {
-  const count = new Map<string, number>()
-  for (const t of texts) {
-    const s = split(t)[1]
-    if (s) count.set(s, (count.get(s) ?? 0) + 1)
-  }
-  return [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
-}
-
 export function buildWidgetFeed(data: AppData, now = new Date(), days = 14): WidgetFeed {
   const main = mainSubject(data.timetables.flatMap((t) => t.slots.map((s) => s.text)))
   const toW = (l: Lesson): WidgetLesson => {
@@ -53,4 +39,42 @@ export function buildWidgetFeed(data: AppData, now = new Date(), days = 14): Wid
       return { date: toISODate(d), lessons: lessonsOn(d, data.timetables, data.settings.bell).map(toW) }
     }),
   }
+}
+
+// ---------- Widget qua app Scriptable (dùng cho bản web) ----------
+
+
+/** Một tiết, viết gọn: s/e = giờ vào/ra, p = tiết, t = lớp, d = môn phụ, c = màu */
+export interface ScriptLesson { s: string; e: string; p: number; t: string; d: string; c: string }
+export interface ScriptData { versions: { from: string; week: ScriptLesson[][] }[] }
+
+/** Toàn bộ các bản thời khoá biểu, mỗi bản chia sẵn theo thứ — widget tự tính ngày nào dùng bản nào. */
+export function buildScriptableData(data: AppData): ScriptData {
+  const all = data.timetables.flatMap((t) => t.slots)
+  const main = mainSubject(all.map((s) => s.text))
+  const color = buildPalette(all)
+  return {
+    versions: [...data.timetables]
+      .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+      .map((tt) => ({
+        from: tt.effectiveFrom,
+        week: Array.from({ length: 7 }, (_, day) =>
+          tt.slots
+            .filter((s) => s.day === day && s.text.trim())
+            .map((s) => toLesson(s, data.settings.bell, color(s.text)))
+            .filter((l): l is Lesson => !!l)
+            .sort((a, b) => toMinutes(a.start) - toMinutes(b.start))
+            .map((l) => {
+              const [t, subject] = split(l.text)
+              return { s: l.start, e: l.end, p: l.period, t, d: subject && subject !== main ? subject : '', c: l.color }
+            }),
+        ),
+      })),
+  }
+}
+
+export function buildScriptableScript(data: AppData, appUrl: string): string {
+  return scriptTemplate
+    .replace('__DATA__', JSON.stringify(buildScriptableData(data)))
+    .replace('__APP_URL__', JSON.stringify(appUrl))
 }

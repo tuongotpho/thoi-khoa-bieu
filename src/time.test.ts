@@ -112,6 +112,14 @@ describe('lịch theo ngày + nhiều bản TKB', () => {
     expect(ics).toContain('RRULE:FREQ=WEEKLY\r\n')
     expect(ics).toContain('TRIGGER:-PT5M')
   })
+  it('tên sự kiện kiểu widget Lịch: "Tiết 1: 11A4", môn phụ ở ô địa điểm', () => {
+    const v = TT({ slots: sampleSlots() })
+    const ics = buildICS([v], { bell: DEFAULT_BELL, reminderMinutes: 0 }, new Date(2026, 9, 13))
+    expect(ics).toContain('SUMMARY:Tiết 1: 11A4')
+    expect(ics).toContain('SUMMARY:Tiết 3: 10A4\r\nDESCRIPTION:10A4 - GDĐP')
+    expect(ics.match(/LOCATION:GDĐP/g)).toHaveLength(2)
+    expect(ics).not.toContain('LOCATION:Hóa học')
+  })
   it('bỏ bản đã hết hạn khi xuất', () => {
     const ics = buildICS([v1, v2], { bell: DEFAULT_BELL, reminderMinutes: 0 }, new Date(2026, 9, 25))
     expect(ics.split('\r\n').filter((x) => x === 'BEGIN:VEVENT')).toHaveLength(1)

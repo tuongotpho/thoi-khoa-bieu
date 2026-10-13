@@ -142,6 +142,22 @@ export function formatDateVN(d: Date | string): string {
   return `${x.getDate()}/${x.getMonth() + 1}/${x.getFullYear()}`
 }
 
+/** "11A4 - Hóa học" → ["11A4", "Hóa học"]; không có " - " thì phần sau rỗng. */
+export function splitText(text: string): [string, string] {
+  const i = text.indexOf(' - ')
+  return i > 0 ? [text.slice(0, i).trim(), text.slice(i + 3).trim()] : [text.trim(), '']
+}
+
+/** Môn xuất hiện nhiều nhất — môn chính, khỏi ghi lặp lại trên mỗi dòng. */
+export function mainSubject(texts: string[]): string {
+  const count = new Map<string, number>()
+  for (const t of texts) {
+    const s = splitText(t)[1]
+    if (s) count.set(s, (count.get(s) ?? 0) + 1)
+  }
+  return [...count].sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
+}
+
 // ---------- Xuất sang Lịch iPhone (.ics) ----------
 
 function icsEscape(s: string): string {
@@ -161,6 +177,7 @@ export function buildICS(tts: Timetable[], s: Pick<Settings, 'bell' | 'reminderM
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const today = toISODate(now)
   const sorted = [...tts].sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+  const main = mainSubject(tts.flatMap((t) => t.slots.map((x) => x.text)))
   const lines = [
     'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//August87//Thoi khoa bieu//VI',
     'CALSCALE:GREGORIAN', 'X-WR-CALNAME:Thời khoá biểu',
@@ -173,6 +190,7 @@ export function buildICS(tts: Timetable[], s: Pick<Settings, 'bell' | 'reminderM
     for (const slot of tt.slots) {
       const l = toLesson(slot, s.bell)
       if (!l || !l.text.trim()) continue
+      const [title, subject] = splitText(l.text)
       const date = toISODate(addDays(from, (l.day - weekday(from) + 7) % 7))
       if (lastDay && date > lastDay) continue
       lines.push(
@@ -182,11 +200,13 @@ export function buildICS(tts: Timetable[], s: Pick<Settings, 'bell' | 'reminderM
         `DTSTART:${icsLocal(date, l.start)}`,
         `DTEND:${icsLocal(date, l.end)}`,
         `RRULE:FREQ=WEEKLY${lastDay ? `;UNTIL=${lastDay.replace(/-/g, '')}T235959` : ''}`,
-        `SUMMARY:${icsEscape(l.text.trim())}`,
-        `DESCRIPTION:${icsEscape(`Tiết ${l.period} ${l.session === 'am' ? 'sáng' : 'chiều'}`)}`,
+        // Giống widget Lịch mẫu: tiêu đề "Tiết 1: 11A4", môn phụ (GDĐP) nằm ở ô địa điểm → hiện bên phải.
+        `SUMMARY:${icsEscape(`Tiết ${l.period}: ${title}`)}`,
+        `DESCRIPTION:${icsEscape(`${l.text.trim()} · Tiết ${l.period} ${l.session === 'am' ? 'sáng' : 'chiều'}`)}`,
       )
+      if (subject && subject !== main) lines.push(`LOCATION:${icsEscape(subject)}`)
       if (s.reminderMinutes > 0) {
-        lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(l.text.trim())}`,
+        lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', `DESCRIPTION:${icsEscape(`Tiết ${l.period}: ${l.text.trim()}`)}`,
           `TRIGGER:-PT${s.reminderMinutes}M`, 'END:VALARM')
       }
       lines.push('END:VEVENT')

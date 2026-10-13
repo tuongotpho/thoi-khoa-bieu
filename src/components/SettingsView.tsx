@@ -5,6 +5,7 @@ import { emptyData, parseData, type Store } from '../store'
 import { Group, Row, Toggle } from './ui'
 import { ask, notify } from './dialog'
 import { isNative } from '../native'
+import { WidgetSetup } from './WidgetSetup'
 
 /** Trên iPhone: mở bảng Chia sẻ (lưu vào Tệp, gửi Zalo…); máy khác: tải file về. */
 async function saveFile(name: string, type: string, content: string) {
@@ -65,6 +66,8 @@ export function SettingsView({ store }: { store: Store }) {
     <div>
       <p className="mb-3 px-4 text-xs text-muted">Giờ từng tiết, gần như cố định cả học kỳ. Mặc định là giờ của THPT Nguyễn Trãi – Ba Đình.</p>
       <BellEditor bell={settings.bell} onChange={(bell) => store.updateSettings({ bell })} />
+
+      {!isNative && <WidgetSetup store={store} />}
 
       <Group title="Hiển thị">
         <Row label="Hiện Chủ nhật">

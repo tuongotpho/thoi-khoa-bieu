@@ -35,7 +35,7 @@ export default function App() {
     <div className="mx-auto min-h-dvh max-w-2xl px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]">
       <h1 className="mb-4 text-3xl font-bold tracking-tight">{LABELS[tab]}</h1>
       {tab === 'today' && <DayView store={store} goTimetable={() => go('week')} />}
-      {tab === 'week' && <TimetableTab store={store} />}
+      {tab === 'week' && <TimetableTab store={store} goSettings={() => go('settings')} />}
       {tab === 'tasks' && <TasksView store={store} />}
       {tab === 'settings' && <SettingsView store={store} />}
 

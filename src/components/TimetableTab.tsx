@@ -5,8 +5,9 @@ import type { Timetable } from '../types'
 import { TimetableGrid } from './TimetableGrid'
 import { TimetableEditor, type Draft } from './TimetableEditor'
 import { Empty, Group, Row } from './ui'
+import { widgetOutdated } from './WidgetSetup'
 
-export function TimetableTab({ store }: { store: Store }) {
+export function TimetableTab({ store, goSettings }: { store: Store; goSettings: () => void }) {
   const { timetables, settings } = store.data
   const [weekOffset, setWeekOffset] = useState(0)
   const [editing, setEditing] = useState<{ draft: Draft; heading: string } | null>(null)
@@ -35,6 +36,12 @@ export function TimetableTab({ store }: { store: Store }) {
           ✏️ Nhập / sửa thời khoá biểu
         </button>
       </div>
+
+      {widgetOutdated(store) && (
+        <button onClick={goSettings} className="mb-3 w-full rounded-xl bg-orange-500/10 px-4 py-2.5 text-left text-sm text-orange-600 dark:text-orange-400">
+          📲 Thời khoá biểu đã đổi — vào Cài đặt chép lại mã widget để widget hiện lịch mới ›
+        </button>
+      )}
 
       <div className="mb-3 flex items-center gap-2">
         <button aria-label="Tuần trước" className="h-10 w-10 rounded-full bg-card text-xl text-accent" onClick={() => setWeekOffset((w) => w - 1)}>‹</button>
