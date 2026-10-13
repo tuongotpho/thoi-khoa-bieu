@@ -64,10 +64,10 @@ export function SettingsView({ store }: { store: Store }) {
 
   return (
     <div>
+      {!isNative && <WidgetSetup store={store} />}
+
       <p className="mb-3 px-4 text-xs text-muted">Giờ từng tiết, gần như cố định cả học kỳ. Mặc định là giờ của THPT Nguyễn Trãi – Ba Đình.</p>
       <BellEditor bell={settings.bell} onChange={(bell) => store.updateSettings({ bell })} />
-
-      {!isNative && <WidgetSetup store={store} />}
 
       <Group title="Hiển thị">
         <Row label="Hiện Chủ nhật">
