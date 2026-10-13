@@ -60,7 +60,6 @@ function BellEditor({ bell, onChange }: { bell: BellSchedule; onChange: (b: Bell
 export function SettingsView({ store }: { store: Store }) {
   const { settings, timetables } = store.data
   const importRef = useRef<HTMLInputElement>(null)
-  const standalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches
 
   return (
     <div>
@@ -118,14 +117,6 @@ export function SettingsView({ store }: { store: Store }) {
         }}>Xoá tất cả dữ liệu</button>
       </Group>
 
-      {!standalone && !isNative && (
-        <Group title="Cài lên màn hình iPhone">
-          <p className="px-4 py-3 text-sm leading-relaxed">
-            Mở trang này bằng <b>Safari</b> → bấm nút <b>Chia sẻ</b> (ô vuông có mũi tên lên) → chọn{' '}
-            <b>“Thêm vào MH chính”</b>. App sẽ có biểu tượng riêng, mở toàn màn hình và dùng được cả khi không có mạng.
-          </p>
-        </Group>
-      )}
 
       <Group title="Giới thiệu">
         <p className="px-4 py-3 text-sm leading-relaxed">

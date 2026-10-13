@@ -11,9 +11,9 @@ jobs:
   ios:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -41,7 +41,7 @@ jobs:
           cp -R build/Build/Products/Release-iphoneos/App.app Payload/
           zip -qr ThoiKhoaBieu-chua-ky.ipa Payload
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: ThoiKhoaBieu-ipa
           path: ios/App/ThoiKhoaBieu-chua-ky.ipa
