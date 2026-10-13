@@ -25,6 +25,17 @@ async function saveFile(name: string, type: string, content: string) {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000)
 }
 
+/**
+ * Mở thẳng file lịch: Safari trên iPhone hiện danh sách sự kiện kèm nút "Thêm tất cả".
+ * Dùng data: URL (không phải blob) vì Safari xử lý dạng này ổn định hơn.
+ */
+function openInCalendar(ics: string) {
+  let bin = ''
+  for (const byte of new TextEncoder().encode(ics)) bin += String.fromCharCode(byte)
+  const b64 = btoa(bin)
+  location.href = `data:text/calendar;charset=utf-8;base64,${b64}`
+}
+
 function BellEditor({ bell, onChange }: { bell: BellSchedule; onChange: (b: BellSchedule) => void }) {
   const set = (s: Session, i: number, p: Partial<Period>) =>
     onChange({ ...bell, [s]: bell[s].map((x, j) => (j === i ? { ...x, ...p } : x)) })
@@ -86,12 +97,16 @@ export function SettingsView({ store }: { store: Store }) {
             {[0, 5, 10, 15, 30].map((m) => <option key={m} value={m}>{m ? `${m} phút` : 'Không nhắc'}</option>)}
           </select>
         </label>
-        {!isNative && (
-        <button className="w-full px-4 py-3 text-left text-accent disabled:opacity-40" disabled={timetables.length === 0}
-          onClick={() => saveFile('thoi-khoa-bieu.ics', 'text/calendar', buildICS(timetables, settings))}>
-          📅 Xuất sang Lịch iPhone
-        </button>
-        )}
+        {!isNative && (<>
+          <button className="w-full px-4 py-3 text-left font-semibold text-accent disabled:opacity-40" disabled={timetables.length === 0}
+            onClick={() => openInCalendar(buildICS(timetables, settings))}>
+            📅 Thêm vào Lịch iPhone
+          </button>
+          <button className="w-full px-4 py-3 text-left text-sm text-accent disabled:opacity-40" disabled={timetables.length === 0}
+            onClick={() => saveFile('thoi-khoa-bieu.ics', 'text/calendar', buildICS(timetables, settings))}>
+            Không mở được Lịch? Lưu file lịch (.ics)
+          </button>
+        </>)}
       </Group>
 
       <Group title="Dữ liệu" footer="Dữ liệu chỉ nằm trên máy này. Nên sao lưu sau mỗi lần cập nhật thời khoá biểu.">
