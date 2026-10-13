@@ -1,0 +1,47 @@
+# Dựng app iPhone (kèm widget) trên máy Mac của GitHub — máy Windows không cần Xcode.
+# Ra file .ipa CHƯA KÝ để cài bằng Sideloadly, hoặc làm bước đệm cho TestFlight sau này.
+name: iOS build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  ios:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - name: Đóng gói phần web + đồng bộ sang dự án iOS
+        run: npm run build:ios
+
+      - name: Sinh dự án Xcode (app + widget)
+        working-directory: ios/App
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build (chưa ký)
+        working-directory: ios/App
+        run: |
+          xcodebuild -project App.xcodeproj -scheme App -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build | tail -n 80
+          test "${PIPESTATUS[0]}" -eq 0
+          ls build/Build/Products/Release-iphoneos/App.app/PlugIns
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/App.app Payload/
+          zip -qr ThoiKhoaBieu-chua-ky.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ThoiKhoaBieu-ipa
+          path: ios/App/ThoiKhoaBieu-chua-ky.ipa

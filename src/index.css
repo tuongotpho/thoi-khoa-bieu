@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent: #007aff;
+  --color-grouped: #f2f2f7;
+  --color-card: #ffffff;
+  --color-bar: #f9f9f9;
+  --color-sep: rgb(60 60 67 / 0.18);
+  --color-muted: #8a8a8e;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-accent: #0a84ff;
+    --color-grouped: #000000;
+    --color-card: #1c1c1e;
+    --color-bar: #121212;
+    --color-sep: rgb(84 84 88 / 0.6);
+    --color-muted: #98989f;
+    color-scheme: dark;
+  }
+}
+
+html, body {
+  background: var(--color-grouped);
+  color: light-dark(#000, #fff);
+  color-scheme: light dark;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+input, select, textarea { font-size: 16px; } /* iPhone không tự phóng to khi gõ */
+button { cursor: pointer; }
+
+@keyframes sheet-in { from { transform: translateY(40px); opacity: 0 } to { transform: none; opacity: 1 } }
+.sheet-in { animation: sheet-in .22s ease-out; }

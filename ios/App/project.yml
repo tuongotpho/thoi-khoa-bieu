@@ -1,0 +1,66 @@
+# Mô tả dự án Xcode (app + widget). Máy Mac trên GitHub Actions chạy `xcodegen generate`
+# để sinh App.xcodeproj từ file này — máy Windows không cần Xcode.
+name: App
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  developmentLanguage: vi
+packages:
+  CapApp-SPM:
+    path: CapApp-SPM
+settings:
+  base:
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1,2"
+    CODE_SIGN_STYLE: Automatic
+targets:
+  App:
+    type: application
+    platform: iOS
+    scheme: {}
+    sources:
+      - path: App
+        excludes:
+          - "public"
+          - "public/**"
+          - "capacitor.config.json"
+          - "config.xml"
+      - path: App/public
+        type: folder
+        buildPhase: resources
+      - path: App/capacitor.config.json
+        buildPhase: resources
+      - path: App/config.xml
+        buildPhase: resources
+    configFiles:
+      Debug: ../debug.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.august87.thoikhoabieu
+        PRODUCT_NAME: App
+        INFOPLIST_FILE: App/Info.plist
+        CODE_SIGN_ENTITLEMENTS: App/App.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks"
+    dependencies:
+      - package: CapApp-SPM
+        product: CapApp-SPM
+      - target: TKBWidget
+  TKBWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: TKBWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.august87.thoikhoabieu.widget
+        PRODUCT_NAME: TKBWidget
+        INFOPLIST_FILE: TKBWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: TKBWidget/TKBWidget.entitlements
+        LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+        SKIP_INSTALL: YES
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework

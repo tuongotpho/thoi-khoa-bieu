@@ -1,0 +1,9 @@
+{
+  "appId": "com.august87.thoikhoabieu",
+  "appName": "Thời khoá biểu",
+  "webDir": "dist",
+  "ios": { "contentInset": "never", "backgroundColor": "#f2f2f7" },
+  "plugins": {
+    "LocalNotifications": { "sound": "default" }
+  }
+}
