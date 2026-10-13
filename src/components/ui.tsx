@@ -1,4 +1,26 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+
+/**
+ * Vùng màn hình còn nhìn thấy (trừ bàn phím ảo). Trên iPhone, bàn phím bật lên không đẩy
+ * các khung `position: fixed` lên theo → ô nhập bị chìm. Đặt khung phủ đúng bằng vùng này.
+ */
+export function useVisibleViewport(): CSSProperties {
+  const [box, setBox] = useState<CSSProperties>({})
+  useEffect(() => {
+    const vv = window.visualViewport
+    if (!vv) return
+    const update = () => {
+      // Chỉ chỉnh khi vùng nhìn thấy nhỏ hơn cửa sổ (bàn phím đang bật).
+      if (vv.height < window.innerHeight - 1) setBox({ top: vv.offsetTop, height: vv.height, bottom: 'auto' })
+      else setBox({})
+    }
+    update()
+    vv.addEventListener('resize', update)
+    vv.addEventListener('scroll', update)
+    return () => { vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update) }
+  }, [])
+  return box
+}
 
 /** Tấm trượt từ dưới lên kiểu iOS, dùng cho các form thêm/sửa. */
 export function Sheet({
@@ -10,17 +32,18 @@ export function Sheet({
   saveDisabled?: boolean
   children: ReactNode
 }) {
+  const viewport = useVisibleViewport()
   useEffect(() => {
     const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
     window.addEventListener('keydown', k)
     return () => window.removeEventListener('keydown', k)
   }, [onClose])
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center" style={viewport} onClick={onClose}>
       <div
         role="dialog"
         aria-label={title}
-        className="sheet-in flex max-h-[92dvh] w-full max-w-lg flex-col rounded-t-2xl bg-grouped sm:rounded-2xl"
+        className="sheet-in flex max-h-[92%] w-full max-w-lg flex-col rounded-t-2xl bg-grouped sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-sep px-4 py-3">

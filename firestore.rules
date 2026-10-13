@@ -1,0 +1,19 @@
+rules_version = '2';
+// Đồng bộ không cần đăng nhập: mỗi bộ lịch nằm ở sync/{mã}, mã ngẫu nhiên 24 ký tự —
+// ai có mã mới đọc/ghi được. Không cho liệt kê (list) để không ai dò được các mã khác.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /sync/{id} {
+      allow get: if id.size() >= 20;
+      allow create, update: if id.size() >= 20
+        && request.resource.data.keys().hasOnly(['data', 'widget', 'updatedAt'])
+        && request.resource.data.data is string && request.resource.data.data.size() < 300000
+        && request.resource.data.widget is string && request.resource.data.widget.size() < 300000
+        && request.resource.data.updatedAt is int;
+      allow list, delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import { buildScriptableScript } from '../widget'
 import type { Store } from '../store'
+import { docUrl, loadMeta } from '../sync'
 import { Group } from './ui'
 
 export const appUrl = () => new URL(import.meta.env.BASE_URL, location.origin).href
 
 /** TKB đã đổi sau lần chép mã widget gần nhất → widget đang hiện lịch cũ. */
 export function widgetOutdated(store: Store): boolean {
+  if (loadMeta()) return false // đang đồng bộ → widget tự lấy lịch mới
   const at = store.data.settings.widgetCopiedAt
   return !!at && store.data.timetables.some((t) => t.createdAt > at)
 }
@@ -17,7 +19,11 @@ export function WidgetSetup({ store }: { store: Store }) {
   const outdated = widgetOutdated(store)
 
   const copy = async () => {
-    const script = buildScriptableScript(store.data, appUrl())
+    // Có đồng bộ: widget tự lấy lịch mới từ máy chủ, bấm vào widget mở web kèm mã đồng bộ.
+    const meta = loadMeta()
+    const script = meta
+      ? buildScriptableScript(store.data, `${appUrl()}#sync=${meta.id}`, docUrl(meta.id))
+      : buildScriptableScript(store.data, appUrl())
     store.updateSettings({ widgetCopiedAt: new Date().toISOString() })
     try {
       await navigator.clipboard.writeText(script)
@@ -56,7 +62,9 @@ export function WidgetSetup({ store }: { store: Store }) {
       </ol>
       <p className="px-4 pb-3 text-xs text-muted">
         Màn hình khoá cũng thêm được (Sửa màn hình khoá → thêm tiện ích Scriptable). iOS tự quyết lúc vẽ lại widget nên đôi khi chuyển tiết trễ vài phút.
-        Khi trường đổi thời khoá biểu: lưu bản mới ở tab TKB rồi chép và dán lại mã.
+        {loadMeta()
+          ? 'Đang bật đồng bộ: widget tự lấy lịch mới, đổi thời khoá biểu không cần chép lại mã.'
+          : 'Khi trường đổi thời khoá biểu: lưu bản mới ở tab TKB rồi chép và dán lại mã. (Bật “Đồng bộ nhiều máy” bên dưới thì widget tự cập nhật.)'}
       </p>
     </Group>
   )

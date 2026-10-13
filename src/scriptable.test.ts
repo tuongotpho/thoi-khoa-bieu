@@ -3,7 +3,7 @@ import { buildScriptableScript } from './widget'
 import { cleanSlots, parseData } from './store'
 
 /** Giả lập các đối tượng của app Scriptable: ghi lại widget được vẽ thành danh sách dòng chữ. */
-function runInFakeScriptable(script: string, family: string) {
+function runInFakeScriptable(script: string, family: string, net: { json?: unknown; fail?: boolean } = {}, files: Record<string, string> = {}) {
   const lines: string[] = []
   class Txt { font: unknown; textColor: unknown; lineLimit = 0; minimumScaleFactor = 1; centerAlignText() {} }
   class Stack {
@@ -28,8 +28,18 @@ function runInFakeScriptable(script: string, family: string) {
   let set: ListWidget | null = null
   const Script = { setWidget: (w: ListWidget) => { set = w }, complete() {} }
   const config = { runsInWidget: true, widgetFamily: family }
+  class Request {
+    timeoutInterval = 60
+    constructor(public url: string) {}
+    async loadJSON() { if (net.fail) throw new Error('mất mạng'); return net.json }
+  }
+  const FileManager = { local: () => ({
+    documentsDirectory: () => '/docs', joinPath: (a: string, b: string) => `${a}/${b}`,
+    fileExists: (p: string) => p in files, readString: (p: string) => files[p],
+    writeString: (p: string, t: string) => { files[p] = t },
+  }) }
   const AsyncFunction = Object.getPrototypeOf(async () => {}).constructor
-  return AsyncFunction('ListWidget', 'Color', 'Font', 'Script', 'config', script)(ListWidget, Color, Font, Script, config)
+  return AsyncFunction('ListWidget', 'Color', 'Font', 'Script', 'config', 'Request', 'FileManager', script)(ListWidget, Color, Font, Script, config, Request, FileManager)
     .then(() => ({ lines, widget: set as unknown as ListWidget }))
 }
 
@@ -50,6 +60,26 @@ const script = buildScriptableScript(data, 'https://example.test/tkb/')
 afterEach(() => { vi.useRealTimers() })
 
 describe('widget Scriptable', () => {
+  it('có đồng bộ: lấy lịch mới từ máy chủ; mất mạng thì dùng bản đã lưu', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 14, 9, 0))
+    const { buildScriptableData } = await import('./widget')
+    const newer = { ...data, timetables: [{ ...data.timetables[0], slots: cleanSlots([C(4, 'pm', 2, '12A1 - Hóa học')]) }] }
+    const synced = buildScriptableScript(data, 'u', 'https://sync.test/doc')
+    const files: Record<string, string> = {}
+    const doc = { fields: { widget: { stringValue: JSON.stringify(buildScriptableData(newer)) } } }
+    expect((await runInFakeScriptable(synced, 'accessoryInline', { json: doc }, files)).lines).toEqual(['13:50 Tiết 2: 12A1'])
+    expect(Object.keys(files)).toEqual(['/docs/tkb-widget-cache.json'])
+    // mất mạng → bản đã lưu (lịch mới), không quay về lịch gắn sẵn
+    expect((await runInFakeScriptable(synced, 'accessoryInline', { fail: true }, files)).lines).toEqual(['13:50 Tiết 2: 12A1'])
+    // mất mạng, chưa từng lưu → lịch gắn sẵn trong mã
+    expect((await runInFakeScriptable(synced, 'accessoryInline', { fail: true }, {})).lines).toEqual(['13:00 Tiết 1: 10A4'])
+  })
+  it('dữ liệu có ký tự $ không làm hỏng mã', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 14, 9, 0))
+    const odd = { ...data, timetables: [{ ...data.timetables[0], slots: cleanSlots([C(4, 'pm', 1, "10A4 - $& $' $1")]) }] }
+    const lines = (await runInFakeScriptable(buildScriptableScript(odd, 'u'), 'accessoryRectangular')).lines
+    expect(lines).toContain("Tiết 1: 10A4")
+  })
   it('21:13 Thứ 3 → cỡ lớn hiện "Ngày mai" đúng như widget mẫu', async () => {
     vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(new Date(2026, 9, 13, 21, 13))
     const { lines, widget } = await runInFakeScriptable(script, 'large')

@@ -6,6 +6,7 @@ import { TasksView } from './components/TasksView'
 import { SettingsView } from './components/SettingsView'
 import { DialogHost } from './components/dialog'
 import { syncNative } from './native'
+import { useSync } from './useSync'
 
 type Tab = 'today' | 'week' | 'tasks' | 'settings'
 
@@ -20,6 +21,7 @@ const SHORT: Record<Tab, string> = { today: 'Hôm nay', week: 'TKB', tasks: 'Vi�
 
 export default function App() {
   const store = useAppData()
+  const sync = useSync(store)
   const [tab, setTab] = useState<Tab>('today')
 
   // App iPhone: cập nhật widget + chuông báo khi dữ liệu đổi và mỗi lần mở lại app.
@@ -37,7 +39,7 @@ export default function App() {
       {tab === 'today' && <DayView store={store} goTimetable={() => go('week')} />}
       {tab === 'week' && <TimetableTab store={store} goSettings={() => go('settings')} />}
       {tab === 'tasks' && <TasksView store={store} />}
-      {tab === 'settings' && <SettingsView store={store} />}
+      {tab === 'settings' && <SettingsView store={store} sync={sync} />}
 
       <DialogHost />
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-sep bg-bar/90 pb-[env(safe-area-inset-bottom)] backdrop-blur">

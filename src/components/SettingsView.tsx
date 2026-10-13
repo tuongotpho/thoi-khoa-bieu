@@ -6,6 +6,8 @@ import { Group, Row, Toggle } from './ui'
 import { ask, notify } from './dialog'
 import { isNative } from '../native'
 import { WidgetSetup } from './WidgetSetup'
+import { SyncSection } from './SyncSection'
+import type { Sync } from '../useSync'
 
 /** Trên iPhone: mở bảng Chia sẻ (lưu vào Tệp, gửi Zalo…); máy khác: tải file về. */
 async function saveFile(name: string, type: string, content: string) {
@@ -69,13 +71,14 @@ function BellEditor({ bell, onChange }: { bell: BellSchedule; onChange: (b: Bell
   )
 }
 
-export function SettingsView({ store }: { store: Store }) {
+export function SettingsView({ store, sync }: { store: Store; sync: Sync }) {
   const { settings, timetables } = store.data
   const importRef = useRef<HTMLInputElement>(null)
 
   return (
     <div>
       {!isNative && <WidgetSetup store={store} />}
+      <SyncSection sync={sync} />
 
       <p className="mb-3 px-4 text-xs text-muted">Giờ từng tiết, gần như cố định cả học kỳ. Mặc định là giờ của THPT Nguyễn Trãi – Ba Đình.</p>
       <BellEditor bell={settings.bell} onChange={(bell) => store.updateSettings({ bell })} />

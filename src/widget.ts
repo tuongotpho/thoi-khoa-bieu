@@ -73,8 +73,11 @@ export function buildScriptableData(data: AppData): ScriptData {
   }
 }
 
-export function buildScriptableScript(data: AppData, appUrl: string): string {
+/** syncUrl: địa chỉ bộ lịch trên máy chủ đồng bộ (có thì widget tự lấy lịch mới), không có thì null. */
+export function buildScriptableScript(data: AppData, appUrl: string, syncUrl: string | null = null): string {
   return scriptTemplate
-    .replace('__DATA__', JSON.stringify(buildScriptableData(data)))
-    .replace('__APP_URL__', JSON.stringify(appUrl))
+    // Thay bằng hàm (không phải chuỗi) để ký tự "$" trong dữ liệu không bị hiểu là ký hiệu đặc biệt.
+    .replace('__DATA__', () => JSON.stringify(buildScriptableData(data)))
+    .replace('__APP_URL__', () => JSON.stringify(appUrl))
+    .replace('__SYNC_URL__', () => JSON.stringify(syncUrl))
 }

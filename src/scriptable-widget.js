@@ -1,10 +1,37 @@
 // Thời khoá biểu — widget màn hình chính (chạy trong app Scriptable)
 // (C) August87 - 0982722036
 // Mã này do web app Thời khoá biểu tạo ra, đã kèm sẵn thời khoá biểu của bạn.
-// Khi trường đổi thời khoá biểu: vào web app bấm "Chép mã widget" rồi dán đè lên mã này.
+// Có bật đồng bộ: widget tự lấy lịch mới nhất mỗi lần vẽ lại, không cần chép lại mã.
+// Không bật đồng bộ: khi trường đổi thời khoá biểu, vào web app bấm "Chép mã widget" rồi dán đè.
 
-const DATA = __DATA__
+const EMBEDDED = __DATA__
 const APP_URL = __APP_URL__
+const SYNC_URL = __SYNC_URL__
+
+/** Lấy lịch: máy chủ đồng bộ → bản đã lưu lần trước (khi mất mạng) → bản gắn sẵn trong mã. */
+async function loadData() {
+  if (!SYNC_URL) return EMBEDDED
+  const fm = FileManager.local()
+  const cache = fm.joinPath(fm.documentsDirectory(), 'tkb-widget-cache.json')
+  try {
+    const req = new Request(SYNC_URL)
+    req.timeoutInterval = 10
+    const doc = await req.loadJSON()
+    const text = doc && doc.fields && doc.fields.widget && doc.fields.widget.stringValue
+    if (text) {
+      fm.writeString(cache, text)
+      return JSON.parse(text)
+    }
+  } catch (e) {
+    /* mất mạng → dùng bản lưu */
+  }
+  try {
+    if (fm.fileExists(cache)) return JSON.parse(fm.readString(cache))
+  } catch (e) { /* bản lưu hỏng */ }
+  return EMBEDDED
+}
+
+const DATA = await loadData()
 
 const DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật']
 const pad = (n) => String(n).padStart(2, '0')

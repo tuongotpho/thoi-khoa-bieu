@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { DAY_NAMES, SESSION_NAMES, type Session, type Slot, type Timetable } from '../types'
 import { buildPalette, daysBetween, formatDateVN, fromISODate, toISODate } from '../time'
 import { uid, type Store } from '../store'
-import { Group, Sheet, inputCls } from './ui'
+import { Group, Sheet, inputCls, useVisibleViewport } from './ui'
 import { ask } from './dialog'
 import { TimetableGrid } from './TimetableGrid'
 
@@ -128,8 +128,9 @@ function CellEditor({ label, value, suggestions, onDone, onCancel }: {
   onCancel: () => void
 }) {
   const [v, setV] = useState(value)
+  const viewport = useVisibleViewport()
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 sm:items-center" onClick={onCancel}>
+    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-black/30 sm:items-center" style={viewport} onClick={onCancel}>
       <div className="sheet-in w-full max-w-lg rounded-t-2xl bg-grouped p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 text-center font-semibold">{label}</div>
